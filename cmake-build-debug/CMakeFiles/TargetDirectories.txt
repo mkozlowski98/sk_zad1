@@ -1,3 +1,0 @@
-/home/maciek/studies/4_sem/sik/zad_1/cmake-build-debug/CMakeFiles/rebuild_cache.dir
-/home/maciek/studies/4_sem/sik/zad_1/cmake-build-debug/CMakeFiles/edit_cache.dir
-/home/maciek/studies/4_sem/sik/zad_1/cmake-build-debug/CMakeFiles/zad_1.dir
