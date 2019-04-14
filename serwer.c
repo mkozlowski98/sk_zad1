@@ -20,15 +20,15 @@ int main(int argc, char *argv[]) {
   struct sockaddr_in client_address;
   socklen_t client_address_len;
 
-//  struct ClientRequest client_request;
+  struct ClientRequest client_request;
   struct RequestId request_id;
   struct DirList dir_list;
   ssize_t len;
 
   struct dirent *dir;
-  DIR *d = opendir(argv[1]);
+  DIR *d;
   uint32_t dir_len, file_len;
-  char *list = (char *) calloc(1, sizeof(char));
+  char *list;
 
   if (argc == 3)
     port_num = (short) strtol(argv[2], NULL, 0);
@@ -60,6 +60,8 @@ int main(int argc, char *argv[]) {
     if (ntohs(request_id.id) == 1) {
       printf("listing dir\n");
       int i = 0;
+      d = opendir(argv[1]);
+      list = (char *) calloc(1, sizeof(char));
       if (d != NULL) {
         while ((dir = readdir(d)) != NULL) {
           if (dir->d_type != DT_DIR) {
@@ -85,6 +87,22 @@ int main(int argc, char *argv[]) {
         dir_list.len = htonl(dir_len);
         if (write(msg_sock, &dir_list, sizeof(dir_list)) != sizeof(dir_list))
           printf("error in write\n");
+        if (write(msg_sock, list, dir_len) != strlen(list))
+          printf("error in write with list\n");
+        len = read(msg_sock, (char *) &request_id, sizeof(request_id));
+        if (len < 0)
+          printf("error in read\n");
+        else {
+          printf("id: %" PRIu16 "\n", ntohs(request_id.id));
+          len = read(msg_sock, (char *) &client_request, sizeof(client_request));
+          if (len < 0)
+            printf("error in read\n");
+          else {
+            printf("begin address: %" PRIu32 ", length: %" PRIu32 ", len_name: %" PRIu16 "\n",
+              ntohl(client_request.begin_address), ntohl(client_request.number_bytes), ntohs(client_request.name_len));
+          }
+        }
+        free(list);
       }
     }
 //    prev_len = 0;
@@ -108,7 +126,6 @@ int main(int argc, char *argv[]) {
     if (close(msg_sock) < 0)
       printf("error in close\n");
     printf("ending connection\n");
-    free(list);
   }
 
   return 0;

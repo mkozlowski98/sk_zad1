@@ -20,7 +20,13 @@ int main(int argc, char *argv[]) {
   int err;
   struct RequestId request_id;
   struct DirList dir_list;
+  struct ClientRequest request;
   ssize_t len;
+
+  char *list;
+  int file_number;
+  uint32_t begin_address, length;
+  uint16_t name_len;
 
   if (argc < 2) {
     printf("Not enough arguments\n");
@@ -59,7 +65,56 @@ int main(int argc, char *argv[]) {
     printf("error in read\n");
   else {
     printf("id: %" PRIu16 ", len: %" PRIu32 "\n", ntohs(dir_list.id), ntohl(dir_list.len));
+    list = (char *) malloc(ntohl(dir_list.len) + 1);
+    len = read(sock, list, ntohl(dir_list.len));
+    if (len < 0) {
+      printf("error in read list\n");
+    } else {
+//      printf("%ld\n", len);
+//      printf("%.*s\n", (int) len, list);
+      char *token = (char *) malloc(ntohl(dir_list.len) + 1);
+      strcpy(token, list);
+      token = strtok(token, "|");
+      int i = 1;
+      printf("Lista plików:\n");
+      while (token != NULL) {
+        printf("%d. %s, %ld\n", i++, token, strlen(token));
+        token = strtok(NULL, "|");
+      }
+//      printf("%s\n", list);
+      free(token);
+      printf("Wybierz plik do przesłania:\n");
+      scanf("%d", &file_number);
+      printf("Wybierz adres początku fragmentu:\n");
+      scanf("%d", &begin_address);
+      printf("Wybierz adres końca fragmentu:\n");
+      scanf("%d", &length);
+      length -= begin_address;
 
+      printf("%d %" PRIu32 " %" PRIu32 "\n", file_number, begin_address, length);
+
+      request_id.id = htons(2);
+      len = sizeof(request_id);
+      if (write(sock, &request_id, sizeof(request_id)) != len) {
+        printf("error in write\n");
+      }
+
+      token = (char *) malloc(ntohl(dir_list.len) + 1);
+      strcpy(token, list);
+      token = strtok(token, "|");
+      for (int k = 1; k < file_number; k++)
+        token = strtok(NULL, "|");
+      name_len = strlen(token);
+
+      request.begin_address = htonl(begin_address);
+      request.number_bytes = htonl(length);
+      request.name_len = htons(name_len);
+      len = sizeof(request);
+      if (write(sock, &request, sizeof(request)) != len)
+        printf("error in write\n");
+//      free(token);
+      free(list);
+    }
   }
 
   if (close(sock) < 0)
