@@ -13,7 +13,7 @@ struct __attribute__((__packed__)) ClientRequest {
   uint16_t name_len;
 };
 
-struct __attribute__((__packed__)) DirList {
+struct __attribute__((__packed__)) ServerAnswer {
   uint16_t id;
   uint32_t len;
 };
